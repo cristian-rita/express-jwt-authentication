@@ -11,6 +11,8 @@ const axios = require('axios');
 const app = express()
 const port = 3001
 
+const SECRET = 'changeme';
+
 const User = require('./model/User');
 const Token = require('./model/Token');
 
@@ -25,8 +27,8 @@ const generateToken = user => {
     email: user.email,
     aud: 'api.example.com',
     iss: 'api.example.com',
-  }, 'secret', {
-    expiresIn: '1h',
+  }, SECRET, {
+    expiresIn: '10s',
     algorithm: 'HS256'
   })
  
@@ -47,33 +49,6 @@ const hashPassword = password => {
 }
 
 const checkPassword = (password, hash) => bcrypt.compare(password, hash)
-
-const checkIfAuthenticated = (req, res, next) => {
- 
-  const token = req.headers.authorization
-
-  if (!token) {
-    return res.status(401).json({
-      error: 'You are not authenticated!'
-    })
-  }
- 
-  try {
-    const decoded = jwtDecode(token)
-    if (decoded.exp < Date.now()) {
-      return res.status(401).json({
-        error: 'Your token has expired!'
-      })
-    }
- 
-    req.user = decoded.user
-    next()
-  } catch (err) {
-    return res.status(500).json({
-      error: 'Could not authenticate token!'
-    })
-  }
-}
 
 const getRefreshToken = () => randToken.uid(256)
 
@@ -194,17 +169,18 @@ const attachUser = (req, res, next) => {
 app.use(attachUser);
 
 const requireAuth = jwt({
-  secret: 'secret',
+  secret: SECRET,
   audience: 'api.example.com',
   issuer: 'api.example.com',
   algorithms: ['HS256']
 });
 
 
-app.post('/api/dashboard',requireAuth, async (req, res) => {
+app.get('/api/cat',requireAuth, async (req, res) => {
    const response = await axios.get('https://cataas.com/cat', { responseType:"arraybuffer" })
-   res.contentType('image/jpeg')
-   res.send(response.data)
+   let raw = Buffer.from(response.data).toString('base64');
+   res.send("data:" + response.headers["content-type"] + ";base64,"+raw);
+
 })
 
 async function connect() {
