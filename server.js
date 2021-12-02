@@ -9,7 +9,7 @@ const jwt = require('express-jwt');
 const axios = require('axios');
 
 const app = express()
-const port = 3001
+const port = 3000
 
 const SECRET = 'changeme';
 
@@ -28,7 +28,7 @@ const generateToken = user => {
     aud: 'api.example.com',
     iss: 'api.example.com',
   }, SECRET, {
-    expiresIn: '10s',
+    expiresIn: '1h',
     algorithm: 'HS256'
   })
  
@@ -107,7 +107,7 @@ app.post('/api/register', async (req, res) => {
   const savedUser = await user.save()
 
   if(savedUser) {
-    const accessToken = createToken(savedUser);
+    const accessToken = generateToken(savedUser);
     const decodedToken = jwtDecode(accessToken);
     const expiresAt = decodedToken.exp;
 
